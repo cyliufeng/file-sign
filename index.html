@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件查阅与签到</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
         body{padding:20px;background:#f5f7fa;max-width:600px;margin:0 auto;}
@@ -27,18 +26,26 @@
 
 <div class="box">
     <h2>✍️访问签到</h2>
-    <input id="username" placeholder="请输入你的姓名">
+    <input id="username" placeholder="请输入你的姓名TEST">
     <button id="signBtn">提交签到</button>
     <div id="msg" class="tip"></div>
 </div>
 
 <script>
 (() => {
-    // ============ Supabase 配置 ============
-    const SUPABASE_URL = "https://xqskjbqrlhhsrpbfqwsq.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_GakkCJYaqOtfeccT7a_rvw_tbfnw09w";
 
-    // ============ 文件列表 ============
+    // ==============================
+    // Supabase 配置
+    // ==============================
+    const SUPABASE_URL = "https://xqskjbqrlhhsrpbfqwsq.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+        "sb_publishable_GakkCJYaqOtfeccT7a_rvw_tbfnw09w";
+
+
+    // ==============================
+    // 文件列表
+    // ==============================
     const fileList = [
         {
             name: "英语语法.pdf",
@@ -46,77 +53,136 @@
         }
     ];
 
-    // ============ 渲染文件 ============
+
+    // ==============================
+    // 显示文件
+    // ==============================
     const fileDom = document.getElementById("fileList");
 
     fileList.forEach(f => {
+
         const a = document.createElement("a");
 
         a.className = "file-item";
+
         a.href = f.url;
+
         a.target = "_blank";
+
         a.rel = "noopener noreferrer";
+
         a.innerText = "📄 " + f.name;
 
         fileDom.appendChild(a);
+
     });
 
-    // ============ 初始化 Supabase ============
-    const supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
 
-    // ============ 获取页面元素 ============
+    // ==============================
+    // 获取页面元素
+    // ==============================
     const signBtn = document.getElementById("signBtn");
+
     const usernameInput = document.getElementById("username");
+
     const msgDom = document.getElementById("msg");
 
-    // ============ 签到 ============
+
+    // ==============================
+    // 签到
+    // ==============================
     signBtn.onclick = async function () {
 
         const name = usernameInput.value.trim();
 
+
+        // 没有姓名
         if (!name) {
+
             msgDom.innerText = "⚠️ 请填写姓名";
+
             msgDom.style.color = "#dc2626";
+
             return;
         }
 
-        msgDom.innerText = "提交中...";
+
+        // 提交中
+        msgDom.innerText = "⏳ 提交中...";
+
         msgDom.style.color = "#444";
 
         signBtn.disabled = true;
 
+
         try {
 
-            const { error } = await supabaseClient
-                .from("sign_record")
-                .insert({
-                    user_name: name
-                });
+            // ==============================
+            // 直接调用 Supabase REST API
+            // 不使用 Supabase JS SDK
+            // ==============================
+            const response = await fetch(
+                SUPABASE_URL + "/rest/v1/sign_record",
+                {
+                    method: "POST",
 
-            if (error) {
-                throw error;
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+
+                    body: JSON.stringify({
+                        user_name: name
+                    })
+                }
+            );
+
+
+            // HTTP 请求失败
+            if (!response.ok) {
+
+                let errorText = "";
+
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = "服务器返回错误";
+                }
+
+                throw new Error(
+                    "HTTP " + response.status + "：" + errorText
+                );
             }
 
+
+            // ==============================
+            // 签到成功
+            // ==============================
             msgDom.innerText = "✅ 签到成功！";
+
             msgDom.style.color = "#059669";
 
             usernameInput.value = "";
+
 
         } catch (error) {
 
             console.error("签到错误：", error);
 
-            msgDom.innerText = "❌ 签到失败：" + error.message;
+            msgDom.innerText =
+                "❌ 签到失败，请重试";
+
             msgDom.style.color = "#dc2626";
+
 
         } finally {
 
             signBtn.disabled = false;
 
         }
+
     };
 
 })();
