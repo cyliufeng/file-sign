@@ -33,58 +33,93 @@
 </div>
 
 <script>
-// ============修改这里为你自己的Supabase信息============
-const SUPABASE_URL = "https://xqskjbqrlhhsrpbfqwsq.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_GakkCJYaqOtfeccT7a_rvw_tbfnw09w";
-// =====================================================
+(() => {
+    // ============ Supabase 配置 ============
+    const SUPABASE_URL = "https://xqskjbqrlhhsrpbfqwsq.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_GakkCJYaqOtfeccT7a_rvw_tbfnw09w";
 
-// 修改这里：填写你的文件名称与网盘分享链接
-const fileList = [
-    {name:"方案文档.pdf", url:"https://飞书网盘链接1"},
-    {name:"图纸.dwg", url:"https://飞书网盘链接2"},
-    {name:"资料包.zip", url:"https://飞书网盘链接3"}
-];
+    // ============ 文件列表 ============
+    const fileList = [
+        {
+            name: "英语语法.pdf",
+            url: "https://ocnr6pgw7wli.feishu.cn/file/TXq9bFBu2oWonbxRD7CcsovOnyf"
+        }
+    ];
 
-//渲染文件列表
-const fileDom = document.getElementById("fileList");
-fileList.forEach(f=>{
-    const a = document.createElement("a");
-    a.className="file-item";
-    a.href=f.url;
-    a.target="_blank";
-    a.innerText = "📄 "+f.name;
-    fileDom.appendChild(a);
-})
+    // ============ 渲染文件 ============
+    const fileDom = document.getElementById("fileList");
 
-//初始化supabase客户端
-const supabase = window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    fileList.forEach(f => {
+        const a = document.createElement("a");
 
-const signBtn = document.getElementById("signBtn");
-const usernameInput = document.getElementById("username");
-const msgDom = document.getElementById("msg");
+        a.className = "file-item";
+        a.href = f.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.innerText = "📄 " + f.name;
 
-signBtn.onclick = async function(){
-    const name = usernameInput.value.trim();
-    if(!name){
-        msgDom.innerText="⚠️请填写姓名";
-        msgDom.style.color="#dc2626";
-        return;
-    }
-    msgDom.innerText="提交中...";
-    msgDom.style.color="#444";
-    signBtn.disabled=true;
+        fileDom.appendChild(a);
+    });
 
-    const {error} = await supabase.from("sign_record").insert({user_name:name});
-    signBtn.disabled=false;
-    if(error){
-        msgDom.innerText="❌签到失败："+error.message;
-        msgDom.style.color="#dc2626";
-    }else{
-        msgDom.innerText="✅签到成功！";
-        msgDom.style.color="#059669";
-        usernameInput.value="";
-    }
-}
+    // ============ 初始化 Supabase ============
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+
+    // ============ 获取页面元素 ============
+    const signBtn = document.getElementById("signBtn");
+    const usernameInput = document.getElementById("username");
+    const msgDom = document.getElementById("msg");
+
+    // ============ 签到 ============
+    signBtn.onclick = async function () {
+
+        const name = usernameInput.value.trim();
+
+        if (!name) {
+            msgDom.innerText = "⚠️ 请填写姓名";
+            msgDom.style.color = "#dc2626";
+            return;
+        }
+
+        msgDom.innerText = "提交中...";
+        msgDom.style.color = "#444";
+
+        signBtn.disabled = true;
+
+        try {
+
+            const { error } = await supabaseClient
+                .from("sign_record")
+                .insert({
+                    user_name: name
+                });
+
+            if (error) {
+                throw error;
+            }
+
+            msgDom.innerText = "✅ 签到成功！";
+            msgDom.style.color = "#059669";
+
+            usernameInput.value = "";
+
+        } catch (error) {
+
+            console.error("签到错误：", error);
+
+            msgDom.innerText = "❌ 签到失败：" + error.message;
+            msgDom.style.color = "#dc2626";
+
+        } finally {
+
+            signBtn.disabled = false;
+
+        }
+    };
+
+})();
 </script>
 </body>
 </html>
